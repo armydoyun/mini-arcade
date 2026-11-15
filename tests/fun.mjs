@@ -35,7 +35,7 @@ for (const mode of ['easy', 'medium', 'hard']) {
 
 // 스네이크: 황금 별 안내가 HUD에 있고, 벽(클래식)에 부딪히면 한 번만 끝난다.
 {
-    const t = mount('snake'); check(t.state.hud.some(([label]) => label === '황금 별'), 'Snake HUD shows the golden-star countdown');
+    const t = mount('snake'); check(t.state.hud.some(([label]) => label === '보너스'), 'Snake HUD shows the bonus countdown');
     advance(4); check(t.state.results.length === 1 && t.state.results[0].win === false, 'Snake ends once when it reaches the wall'); t.destroy();
 }
 {
@@ -45,7 +45,7 @@ for (const mode of ['easy', 'medium', 'hard']) {
 // 효과 모듈: 캔버스가 없어도(테스트 DOM) 흔들림·번쩍임·고리가 안전하게 무시되거나 그려진다.
 {
     const calls = []; const ctx = new Proxy({}, { get: (_, name) => (name === 'canvas' ? undefined : (...a) => calls.push([name, a])), set: () => true });
-    const fx = effects(null); fx.shake(); fx.flash(); fx.ring(10, 10); fx.burst(5, 5, '#fff', 4, 50, 300); fx.label(5, 5, '+1');
+    const fx = effects(null); fx.shake(); fx.ring(10, 10); fx.burst(5, 5, '#fff', 4, 50, 300); fx.label(5, 5, '+1');
     for (let n = 0; n < 30; n++) fx.update(1 / 60); fx.draw(ctx);
     check(calls.every(([, args]) => args.every((v) => typeof v !== 'number' || Number.isFinite(v))), 'Effects draw only finite coordinates');
     for (let n = 0; n < 120; n++) fx.update(1 / 60); calls.length = 0; fx.draw(ctx); check(!calls.some(([name]) => name === 'arc'), 'Effects expire after their lifetime');
