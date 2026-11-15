@@ -94,4 +94,13 @@ for (const [id, first] of [['tictactoe', 4], ['connect-four', 3], ['gomoku', 112
     while (!t.state.results.length && guard++ < 80) { const open = t.cells().findIndex((cell) => /\blegal\b/.test(cell.className)); if (open >= 0) t.click(open); advance(0.7); }
     check(t.state.results.length === 1, 'Reversi cpu game plays to the end'); t.destroy();
 }
+// Pong: 컴퓨터 패들은 혼자서 공을 받아치고, 가만히 있는 사람에게서 점수를 따내 경기를 끝낸다.
+{
+    const t = mount('pong', { mode: 'cpu' });
+    check(t.state.hud[2][0] === '컴퓨터', 'Pong cpu: HUD names the computer');
+    let guard = 0; while (!t.state.results.length && guard++ < 200) advance(1);
+    const result = t.state.results[0];
+    check(result?.winner === 2 && result.title === '컴퓨터 승리', 'Pong cpu: an idle player loses to the computer');
+    t.destroy();
+}
 console.log(`PASS: ${counts().assertions} computer-opponent conditions`);

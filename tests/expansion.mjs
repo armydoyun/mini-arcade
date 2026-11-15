@@ -150,7 +150,7 @@ const app = async (mode, winner, id = 'golf') => {
     const r = stored.records[`${id}:v3:${mode}`]; check(mode === 'duel' ? r.p1 === 1 && r.best === undefined : r.best === 25 && r.p1 === 0, `${mode} records use the correct ranking kind`);
     check(el('play-category').textContent.startsWith(mode === 'duel' || id==='switch-duo' ? '2 PLAYERS' : '1 PLAYER'), 'Header reflects the selected player count');
     if(id==='switch-duo') check(stored.completed['switch-duo:stage-0']==='clean' && !el('overlay-next').hidden && el('overlay-action').textContent==='함께 다시 · R', 'Cooperative completion persists, offers a next stage, and uses cooperative result copy');
-    filters[1].emit('click'); check(el('game-grid').children.length===32, 'Solo filter includes mixed-player golf and computer-opponent modes'); filters[2].emit('click'); check(el('game-grid').children.length===13, 'Together filter includes golf and cooperation'); filters[3].emit('click'); check(el('game-grid').children.length===4, 'New filter contains exactly this release’s additions');
+    filters[1].emit('click'); check(el('game-grid').children.length===33, 'Solo filter includes mixed-player golf and computer-opponent modes'); filters[2].emit('click'); check(el('game-grid').children.length===13, 'Together filter includes golf and cooperation'); filters[3].emit('click'); check(el('game-grid').children.length===4, 'New filter contains exactly this release’s additions');
 };
 await app('solo'); await app('duel',1); await app('stage-0', undefined, 'switch-duo');
 console.log(`PASS: ${counts().assertions} expansion rule / input / completion conditions`);

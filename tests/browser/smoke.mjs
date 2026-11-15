@@ -65,6 +65,33 @@ try {
             }
         }
     }
+    // 혼자 · 컴퓨터와 모드: 실제 브라우저에서 내가 두면 컴퓨터가 응수한다(배포본 기준).
+    for (const game of games.filter((item) => item.modes?.some((mode) => mode.cpu))) {
+        for (const mode of game.modes.filter((item) => item.cpu)) {
+            const page = await newPage(browser);
+            try {
+                await page.goto(`${targets.deploy}#${game.id}`);
+                await page.waitForSelector("#game-mode");
+                await page.selectOption("#game-mode", mode.id);
+                await page.keyboard.press("Enter");
+                await page.waitForTimeout(100);
+                const hud = await page.textContent("#game-hud");
+                check(hud.includes("컴퓨터"), `${game.id}/${mode.id}: HUD에 컴퓨터 표시`);
+                if (game.id !== "pong") {
+                    const stones = () => page.locator("#game-root .cell.p1, #game-root .cell.p2").count(), before = await stones();
+                    const target = game.id === "reversi" ? "#game-root .cell.legal" : "#game-root .cell:not(.p1):not(.p2)";
+                    await page.locator(target).nth(game.id === "gomoku" ? 112 : 0).click();
+                    await page.waitForTimeout(900);
+                    check((await stones()) >= before + 2, `${game.id}/${mode.id}: 컴퓨터가 응수`);
+                } else await page.waitForTimeout(1500);
+                check(page.errors.length === 0, `${game.id}/${mode.id} 오류\n${page.errors.join("\n")}`);
+            } catch (error) {
+                failures.push(`cpu/${game.id}/${mode.id}: ${error.message.split("\n").slice(0, 6).join("\n")}`);
+            } finally {
+                await page.closeAll();
+            }
+        }
+    }
 } finally {
     await close();
 }

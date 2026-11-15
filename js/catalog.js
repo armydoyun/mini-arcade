@@ -94,7 +94,7 @@ const choices = {
     sliding: [['classic', '4×4 클래식'], ['easy', '3×3 입문']], lights: [['classic', '5×5 클래식'], ['easy', '3×3 입문']], flood: [['classic', '25회 클래식'], ['easy', '30회 넉넉하게'], ['hard', '22회 도전']],
     memory: [['classic', '8쌍 클래식'], ['quick', '6쌍 빠르게'], ['challenge', '10쌍 도전']], simon: [['classic', '기회 1번'], ['safe', '기회 3번']], maze: [['classic', '15×15 탐험'], ['fog', '21×21 안개']],
     tictactoe: [['classic', '둘이 · 3개 연결 승리'], ['reverse', '둘이 · 3개 연결 패배'], ['cpu', '혼자 · 컴퓨터와 3개 연결'], ['cpu-reverse', '혼자 · 컴퓨터와 역전 규칙']],
-    gomoku: [['classic', '둘이 대전'], ['cpu', '혼자 · 컴퓨터와']], 'connect-four': [['classic', '둘이 대전'], ['cpu', '혼자 · 컴퓨터와']], reversi: [['classic', '둘이 대전'], ['cpu', '혼자 · 컴퓨터와']], hex: [['classic', '7×7'], ['large', '9×9']], pong: [['classic', '7점 승부'], ['long', '11점 승부']], cycles: [['classic', '먼저 3승'], ['sudden', '단판 승부']]
+    gomoku: [['classic', '둘이 대전'], ['cpu', '혼자 · 컴퓨터와']], 'connect-four': [['classic', '둘이 대전'], ['cpu', '혼자 · 컴퓨터와']], reversi: [['classic', '둘이 대전'], ['cpu', '혼자 · 컴퓨터와']], hex: [['classic', '7×7'], ['large', '9×9']], pong: [['classic', '둘이 · 7점 승부'], ['long', '둘이 · 11점 승부'], ['cpu', '혼자 · 컴퓨터와 7점']], cycles: [['classic', '먼저 3승'], ['sudden', '단판 승부']]
 };
 for (const game of games) {
     if (choices[game.id]) game.modes = choices[game.id].map(([id, name]) => ({ id, name }));
@@ -105,6 +105,7 @@ for (const game of games) {
     game.protectProgress = ['golf', 'switch-duo'].includes(game.id);
     // 컴퓨터 상대 모드: 혼자 하는 대전. 기록은 나(P1)·컴퓨터(P2) 승수로 남긴다.
     game.modes?.forEach((mode) => { if (mode.id.startsWith('cpu')) Object.assign(mode, { players: 1, record: 'duel', cpu: true }); });
-    if (game.modes?.some((mode) => mode.cpu)) game.rules = [...game.rules, '혼자 · 컴퓨터와 모드에서는 내가 먼저 두고 컴퓨터가 응수해요. 되돌리기는 컴퓨터의 수까지 함께 되돌리고, 기록은 나와 컴퓨터의 승수로 남아요.'];
+    if (game.id === 'pong') game.rules = [...game.rules, '혼자 · 컴퓨터와 모드는 W/S와 ↑/↓ 모두 왼쪽 패들을 움직여요. 컴퓨터는 착지점을 예측하지만 랠리마다 조금씩 빗나가요.'];
+    else if (game.modes?.some((mode) => mode.cpu)) game.rules = [...game.rules, '혼자 · 컴퓨터와 모드에서는 내가 먼저 두고 컴퓨터가 응수해요. 되돌리기는 컴퓨터의 수까지 함께 되돌리고, 기록은 나와 컴퓨터의 승수로 남아요.'];
     if (game.id === 'golf') game.modes.forEach((mode) => { mode.players = mode.id === 'duel' ? 2 : 1; mode.record = mode.id === 'duel' ? 'duel' : 'low'; });
 }
