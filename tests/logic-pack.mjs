@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { laserPuzzles, pipePuzzles, sudokuPuzzles } from '../js/puzzles.js';
-import { laserTrace, parseLaser, rotatePorts, pipeNetwork, sudokuSolve, sudokuConflicts, mancalaMove } from '../js/rules.js';
+import { laserTrace, parseLaser, rotatePorts, pipeNetwork, sudokuSolve, mancalaMove } from '../js/rules.js';
 import { games } from '../js/catalog.js';
 import { Element, tick, advance, key, mount, check, counts } from './harness.mjs';
 

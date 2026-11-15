@@ -1,4 +1,4 @@
-import { background, circle, circleBox, clamp, rounded, palette, text } from '../core.js';
+import { background, circle, circleBox, clamp, rounded, palette } from '../core.js';
 import { effects } from '../effects.js';
 
 export default (s) => {

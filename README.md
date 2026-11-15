@@ -14,7 +14,7 @@ python -m http.server 8000
 
 브라우저에서 `http://localhost:8000`에 접속합니다. 서버는 정적 파일만 제공하며 모든 게임 처리는 브라우저 안에서 이루어집니다. 외부 인터넷 연결은 필요하지 않습니다.
 
-개발 소스를 `file://`로 직접 열면 브라우저의 모듈 보안 제한에 걸릴 수 있습니다. 최종 단일 파일은 사용자가 나중에 번들링하는 방식이며, 이 패키지에는 번들러와 배포 번들을 포함하지 않습니다.
+개발 소스를 `file://`로 직접 열면 브라우저의 모듈 보안 제한에 걸릴 수 있습니다. 더블클릭으로 여는 한 파일짜리 배포본은 `npm run build`가 `deploy/index.html`로 만듭니다(아래 ‘빌드와 CI/CD’). Node가 있으면 `npm run serve`로도 개발 서버를 띄울 수 있습니다.
 
 ## 게임과 조작
 
@@ -125,11 +125,36 @@ tests/*.mjs            개발 검증. 게임 실행에는 불필요
 docs/                  변경·개발 기준·바이트 집계
 ```
 
-게임 진입점은 `export default (session) => { ... }`입니다. 런타임은 HTML 1개, CSS 1개, JavaScript 48개입니다. 지연 `import()` 없이 모두 정적으로 연결하므로 `js/app.js`를 번들 진입점으로 사용할 수 있습니다. 단일 HTML을 만들 때는 CSS도 인라인으로 넣고 외부 `link`와 모듈 `script src` 참조를 바꾸세요. 이미지·폰트 등의 추가 자산은 없습니다.
+게임 진입점은 `export default (session) => { ... }`입니다. 런타임은 HTML 1개, CSS 1개, JavaScript 48개입니다. 지연 `import()` 없이 모두 정적으로 연결하므로 `js/app.js`를 번들 진입점으로 사용합니다. 이미지·폰트 등의 추가 자산은 없습니다.
+
+## 빌드와 CI/CD
+
+게임 실행에는 여전히 아무 의존성도 없습니다. `package.json`의 개발 도구(esbuild·ESLint·Playwright)는 빌드와 검사에만 씁니다.
+
+```sh
+npm ci                 # 개발 도구 설치
+npm run build          # deploy/index.html: CSS·JS를 모두 인라인한 단일 파일(file://로 열림)
+npm run lint           # ESLint, 경고도 실패
+npm run size:check     # 실행 원본 합계 1,000,000 B 미만
+npm run test:node      # 모의 DOM 검사 + 빌드 검사
+npm run test:browser   # Chromium에서 개발 소스와 배포본으로 40종을 실제 실행(npx playwright install chromium 필요)
+npm test               # 전체
+```
+
+| 파일 | 역할 |
+|---|---|
+| `tools/build.mjs` | esbuild로 `js/app.js`를 IIFE로 묶고 CSS와 함께 `index.html`에 넣음. 스크립트는 `</body>` 앞으로 옮김 |
+| `tools/inline-html.mjs` | 인라인 치환과 바깥 파일 참조·`</script` 안전 검사 |
+| `tools/size.mjs` · `tools/serve.mjs` | 실행 원본 용량 집계 · 개발용 정적 서버 |
+| `tests/run.mjs` | node / browser 묶음 실행기. `--strict`는 건너뛴 묶음도 실패로 처리 |
+| `tests/browser/smoke.mjs` | 홈 카드·검색·필터, 40종 시작·입력·일시정지·재시작·복귀를 개발 소스와 배포본에서 검사. 콘솔 오류가 하나라도 있으면 실패 |
+| `.github/workflows/ci.yml` | push·PR마다 lint → test(node, browser) → build. 배포본을 Artifacts에 올림 |
+
+**GitHub Pages 자동 배포**: Settings → Pages → Source를 *GitHub Actions*로 바꾸고, Settings → Secrets and variables → Actions → Variables에 `DEPLOY_PAGES` = `true`를 추가하면 `main`에 push될 때마다 검사를 통과한 배포본이 Pages에 올라갑니다.
 
 ## 검증
 
-Node 24.22.1에서 다음 검사를 통과했습니다. 테스트도 외부 패키지 없이 실행하며, Node는 게임 실행에 필요하지 않습니다.
+Node 22·24에서 다음 검사를 통과합니다. 아래 node 검사는 외부 패키지 없이 실행하며(`npm run test:node`로 한 번에 실행), Node는 게임 실행에 필요하지 않습니다.
 
 ```sh
 node tests/rules.mjs
