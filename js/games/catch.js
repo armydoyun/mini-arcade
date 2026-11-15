@@ -17,7 +17,7 @@ export default (s) => {
             object.rotation += dt;
             if (circleBox(object, 11, { x: x - 38, y: 395, w: 76, h: 25 })) {
                 if (object.type === 'bomb') {
-                    lives--;
+                    lives--; fx.shake(6); fx.flash(palette.coral);
                     combo = 0;
                     fx.burst(x, 400, palette.coral, 18);
                     s.sound(140, .08);

@@ -1,5 +1,5 @@
 import { games } from './catalog.js';
-import { createSession, node, formatTime, random } from './core.js';
+import { createSession, node, formatTime, random, reducedMotion } from './core.js';
 import { icon, gameArt } from './icons.js';
 
 const $ = (id) => document.getElementById(id), storageKey = 'mini-arcade-v1';
@@ -29,6 +29,15 @@ let filter = 'all', category = '전체', session = null, current = null, returnF
 let runningOptions = {}, playCpu = false, recordVariant = 'classic', nextOptions = null, lastResult = null, fittedHeight = -1, playPlayers = 1, recordType = 'high';
 const supports = (game, players) => game.players === players || game.modes?.some((mode) => mode.players === players);
 const protectedGame = (game) => game.protectProgress || ['퍼즐', '기억·탐색', '턴제 대전'].includes(game.category);
+const celebrate = () => {
+    if (reducedMotion() || data.motion) return;
+    const layer = node('div', 'confetti'), colors = ['#b9f86b', '#82b6ff', '#ff8e7a', '#f5d47d', '#c1a0ff'];
+    for (let n = 0; n < 42; n++) {
+        const piece = node('i'); piece.style.setProperty('--x', `${random(2, 98)}%`); piece.style.setProperty('--drift', `${random(-90, 90)}px`); piece.style.setProperty('--spin', `${random(-720, 720)}deg`);
+        piece.style.setProperty('--delay', `${random(0, 350)}ms`); piece.style.setProperty('--fall', `${random(1100, 1700)}ms`); piece.style.background = colors[n % colors.length]; layer.append(piece);
+    }
+    $('game-overlay').append(layer); setTimeout(() => layer.remove(), 2200);
+};
 const toast = (message) => {
     $('toast').textContent = message; $('toast').hidden = false; clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { $('toast').hidden = true; }, 2600);
@@ -115,7 +124,7 @@ const finish = (result) => {
     let improved = false; record.plays++; record.lastDate = new Date().toLocaleDateString('ko-KR'); record.modeLabel = $('record-mode').textContent;
     if (recordType === 'duel') {
         if (result.winner) record[`p${result.winner}`]++; else record.draws++;
-    } else if (!result.practice && Number.isFinite(result.score) && (order !== 'low' || result.win !== false)) {
+    } else if (!result.practice && Number.isFinite(result.score) && (order !== 'low' || result.win !== false) && (order === 'low' || result.score > 0)) {
         if (record.best === undefined || (order === 'low' ? result.score < record.best : result.score > record.best) || (result.score === record.best && Number.isFinite(result.tieScore) && result.tieScore < (record.bestTie ?? Infinity))) {
             improved = true; record.best = result.score; record.bestTie = Number.isFinite(result.tieScore) ? result.tieScore : undefined; record.bestText = result.recordText || `${result.score.toLocaleString()}점`;
         }
@@ -127,6 +136,8 @@ const finish = (result) => {
         renderModes();
     }
     const saved = save(); updateRecord(); lastResult = result;
+    // 이긴 판·최고 기록에는 결과창 위로 색종이가 잠깐 흩날린다(움직임 줄이기에서는 생략).
+    if (!result.practice && (improved || result.win === true || (playCpu && result.winner === 1) || (recordType === 'duel' && !playCpu && result.winner))) celebrate();
     $('game-overlay').classList.add('result'); $('overlay-tag').textContent = result.practice ? 'PRACTICE COMPLETE' : improved ? 'NEW PERSONAL BEST' : 'WELL PLAYED';
     $('overlay-title').textContent = result.title || '한 판 완료!'; $('overlay-text').textContent = result.text || `${result.score || 0}점`;
     const recordStatus = !saved ? '이번 실행 중' : result.practice ? '연습' : improved ? '최고 기록!' : '저장 완료';

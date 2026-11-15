@@ -27,6 +27,7 @@ class Element {
         const owner = this;
         this.context ??= new Proxy({}, {
             get(target, name) {
+                if (!(name in target) && /^create(Linear|Radial|Conic)Gradient$/.test(name)) return (...args) => { draws++; for (const value of args) assert.ok(Number.isFinite(value), `${String(name)} received a non-finite coordinate`); return { addColorStop() {} }; };
                 if (!(name in target)) return (...args) => { draws++; for (const value of args) if (typeof value === 'number') assert.ok(Number.isFinite(value), `${String(name)} received a non-finite coordinate`); owner.paint?.(name, args, target); };
                 return target[name];
             },

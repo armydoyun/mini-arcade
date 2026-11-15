@@ -15,7 +15,7 @@ export default (s) => {
     };
     const toggle = () => { if (trail.length) { s.message('선을 닫아 안전 구역으로 돌아오면 그리기를 끌 수 있어요.'); return; } armed = !armed; hud(); s.sound(armed ? 430 : 250, .04); };
     const lose = (reason) => {
-        const p = center(player); fx.burst(p.x, p.y, palette.coral, 24, 100); lives--; trail = []; armed = false; from = player = lastSafe; timer = 0; blend = 1; grace = 1.5; s.releaseKeys();
+        const p = center(player); fx.burst(p.x, p.y, palette.coral, 24, 100); lives--; fx.shake(6); trail = []; armed = false; from = player = lastSafe; timer = 0; blend = 1; grace = 1.5; s.releaseKeys();
         if (!lives) s.finish({ score, win: false, title: '다음에는 더 넓게!', text: `${percent().toFixed(1)}% 점령 · ${score}점 · ${reason}` });
         else { s.message(`${reason} 기회가 하나 줄었어요. 안전 구역에서 다시 시작하세요.`); s.sound(160, .1); } hud();
     };

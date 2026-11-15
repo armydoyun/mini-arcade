@@ -42,7 +42,7 @@ export default (s) => {
     };
     const endRound = (deaths) => {
         const winner = deaths.size === 1 ? 2 - [...deaths][0] : 0;
-        deaths.forEach((i) => { players[i].alive = false; fx.burst(players[i].x, players[i].y, colors[i], 28, 150); });
+        deaths.forEach((i) => { players[i].alive = false; fx.burst(players[i].x, players[i].y, colors[i], 28, 150); fx.ring(players[i].x, players[i].y, colors[i], 64); fx.shake(7); });
         s.sound(deaths.size ? 160 : 260, .12);
         if (winner) scores[winner - 1]++; bullets = []; hudKey = '';
         if (winner && scores[winner - 1] === 3) { hud(); s.finish({ winner, title: `P${winner} 승리!`, text: `${scores[0]} : ${scores[1]} · ${round}라운드의 반사탄 승부를 마쳤어요.` }); return; }

@@ -5,7 +5,7 @@ import { effects } from '../effects.js';
 const colors = ['#82d6e8', '#f5d47d', '#c1a0ff', '#82b6ff', '#e5a36e', '#b9f86b', '#ff8e7a'];
 export default (s) => {
     const board = Array.from({ length: 20 }, () => Array(10).fill(0)), { ctx } = s.canvas(400, 560), fx = effects(s);
-    const sprint = s.options.mode === 'sprint'; let bag = [], queue = [], current, held = null, heldUsed = false, score = 0, lines = 0, gravity = 0, repeat = .15, lockTime = 0, resets = 0, lastDirection = 1, combo = -1, bestCombo = 0, lastTimer = -1, backToBack = false;
+    const sprint = s.options.mode === 'sprint'; let flashes = [], landed = null, bag = [], queue = [], current, held = null, heldUsed = false, score = 0, lines = 0, gravity = 0, repeat = .15, lockTime = 0, resets = 0, lastDirection = 1, combo = -1, bestCombo = 0, lastTimer = -1, backToBack = false;
     const pick = () => { if (!bag.length) bag = shuffle([0, 1, 2, 3, 4, 5, 6]); return bag.pop(); };
     const take = () => { while (queue.length < 4) queue.push(pick()); return queue.shift(); };
     const fits = (shape, x, y) => tetrisFits(board, shape, x, y);
@@ -15,9 +15,11 @@ export default (s) => {
     const lock = () => {
         if (current.shape.some((row, y) => row.some((value) => value && current.y + y < 0))) { lose(); return; }
         current.shape.forEach((row, y) => row.forEach((value, x) => { if (value) board[current.y + y][current.x + x] = current.type + 1; }));
-        let cleared = 0;
+        let cleared = 0; const full = board.flatMap((row, y) => row.every(Boolean) ? [y] : []);
+        // 지운 줄은 잠깐 하얗게 번쩍이며 사라지는 잔상으로 남긴다(판정은 즉시 끝나 있다). 착지한 블록도 살짝 빛난다.
+        full.forEach((y) => flashes.push({ y, age: 0, tetris: full.length === 4 })); landed = { cells: current.shape.flatMap((row, y) => row.flatMap((v, x) => v ? [[current.x + x, current.y + y - full.filter((fy) => fy > current.y + y).length]] : [])), age: 0 };
         for (let y = 19; y >= 0; y--) if (board[y].every(Boolean)) { fx.burst(140, 46 + y * 24, palette.green, 22, 180); board.splice(y, 1); board.unshift(Array(10).fill(0)); cleared++; y++; }
-        if (cleared) { combo++; bestCombo = Math.max(bestCombo, combo + 1); let gain = [0, 100, 300, 500, 800][cleared]; if (cleared === 4 && backToBack) gain *= 1.5; gain += Math.max(0, combo) * 50; score += gain * (Math.floor(lines / 10) + 1); backToBack = cleared === 4; lines += cleared; fx.label(145, 275, cleared === 4 ? 'TETRIS!' : combo > 0 ? `${combo + 1} COMBO` : `${cleared} LINE`, palette.green); s.sound(440 + cleared * 100); }
+        if (cleared) { combo++; bestCombo = Math.max(bestCombo, combo + 1); let gain = [0, 100, 300, 500, 800][cleared]; if (cleared === 4 && backToBack) gain *= 1.5; gain += Math.max(0, combo) * 50; score += gain * (Math.floor(lines / 10) + 1); backToBack = cleared === 4; lines += cleared; if (cleared === 4) { fx.shake(6); fx.flash('#b9f86b'); fx.ring(142, 46 + full[0] * 24, '#b9f86b', 140, .5); } fx.label(145, 275, cleared === 4 ? 'TETRIS!' : combo > 0 ? `${combo + 1} COMBO` : `${cleared} LINE`, palette.green); s.sound(440 + cleared * 100); }
         else combo = -1;
         hud(); if (sprint && lines >= 40) { const seconds = Math.max(.1, Math.floor(s.elapsed() * 10 + 1e-7) / 10); s.finish({ seconds, score: seconds, order: 'low', recordText: `${seconds.toFixed(1)}초`, title: '40줄 스프린트 완주!', text: `${seconds.toFixed(1)}초 · ${score.toLocaleString()}점` }); return; } spawn();
     };
@@ -39,12 +41,15 @@ export default (s) => {
         gravity += dt; const interval = s.down('ArrowDown') ? .035 : Math.max(.065, .78 * .8 ** Math.floor(lines / 10));
         if (gravity >= interval) { gravity -= interval; if (fits(current.shape, current.x, current.y + 1)) { current.y++; if (s.down('ArrowDown')) { score++; hud(); } } }
         if (grounded()) { lockTime += dt; if (lockTime >= .45) lock(); } else if (resets < 12) lockTime = 0;
+        for (let i = flashes.length - 1; i >= 0; i--) if ((flashes[i].age += dt) > .35) flashes.splice(i, 1); if (landed && (landed.age += dt) > .25) landed = null;
         if (sprint && Math.floor(s.elapsed() * 10) !== lastTimer) { lastTimer = Math.floor(s.elapsed() * 10); hud(); }
     }, () => {
         background(ctx, 400, 560, 24); rounded(ctx, 21, 33, 242, 482, '#101721', 3); ctx.strokeStyle = '#233142'; ctx.lineWidth = .6;
         for (let x = 0; x <= 10; x++) { ctx.beginPath(); ctx.moveTo(22 + x * 24, 34); ctx.lineTo(22 + x * 24, 514); ctx.stroke(); } for (let y = 0; y <= 20; y++) { ctx.beginPath(); ctx.moveTo(22, 34 + y * 24); ctx.lineTo(262, 34 + y * 24); ctx.stroke(); }
         board.forEach((row, y) => row.forEach((value, x) => { if (value) block(x, y, colors[value - 1]); })); let ghost = current.y; while (fits(current.shape, current.x, ghost + 1)) ghost++;
         current.shape.forEach((row, y) => row.forEach((value, x) => { if (value) { block(current.x + x, ghost + y, colors[current.type], .18); block(current.x + x, current.y + y, colors[current.type]); } }));
+        if (landed) { ctx.globalAlpha = (1 - landed.age / .25) * .45; ctx.fillStyle = '#ffffff'; landed.cells.forEach(([x, y]) => { if (y >= 0) ctx.fillRect(22 + x * 24 + 1, 34 + y * 24 + 1, 22, 22); }); ctx.globalAlpha = 1; }
+        flashes.forEach((f) => { const t = f.age / .35; ctx.globalAlpha = (1 - t) * .85; ctx.fillStyle = f.tetris ? '#e8ffc8' : '#ffffff'; const grow = 1 + t * .08; ctx.fillRect(22 + 120 - 120 * grow, 34 + f.y * 24 + 12 - 12 * (1 - t), 240 * grow, 24 * (1 - t)); }); ctx.globalAlpha = 1;
         text(ctx, 'NEXT', 329, 48, 12, palette.muted); queue.slice(0, 3).forEach((type, i) => miniature(type, 279, 75 + i * 85)); text(ctx, 'HOLD · C', 329, 355, 12, heldUsed ? '#536176' : palette.muted); miniature(held, 279, 383); text(ctx, 'Z ↶   X ↷', 329, 475, 12, palette.muted); text(ctx, 'SPACE ↓', 329, 501, 12, palette.muted); fx.draw(ctx);
     }); s.message('C 보관 · Z/X 회전 · Space 즉시 낙하 · 착지 후 0.45초 동안 위치를 조정할 수 있어요.'); s.ready('테트리스', sprint ? '40줄을 최대한 빠르게 지우세요. 보관과 양방향 회전을 활용해요.' : '다음 블록 3개를 보고 쌓으세요. 연속 줄 제거와 4줄 제거로 보너스를 얻어요.');
 };
