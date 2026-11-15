@@ -1,0 +1,29 @@
+{
+  "name": "mini-arcade",
+  "private": true,
+  "type": "module",
+  "description": "MINI ARCADE — 40종 미니게임 웹 모음. 빌드·테스트 도구 정의(게임 실행 자체는 의존성 없음)",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node tests/run.mjs",
+    "test:node": "node tests/run.mjs node",
+    "test:browser": "node tests/run.mjs browser",
+    "test:list": "node tests/run.mjs --list",
+    "test:ci": "node tests/run.mjs --strict",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "size": "node tools/size.mjs",
+    "size:check": "node tools/size.mjs --check",
+    "serve": "node tools/serve.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "esbuild": "0.28.2",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
+    "playwright": "1.63.0"
+  }
+}

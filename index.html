@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101318">
+    <meta name="description" content="혼자서, 또는 바로 옆의 친구와. 40개의 작은 게임을 담은 오프라인 아케이드.">
+    <title>MINI ARCADE · 한 판의 즐거움</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b9f86b'/%3E%3Cpath d='M7 24V8h5l4 8 4-8h5v16h-5v-8l-4 7-4-7v8z' fill='%23101318'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="js/app.js"></script>
+</head>
+<body>
+    <header class="site-header wrap">
+        <a class="brand" href="#" aria-label="미니 아케이드 홈"><span class="brand-mark" id="brand-mark" aria-hidden="true"></span><span>MINI<span class="brand-light">ARCADE</span></span></a>
+        <div class="header-end"><span id="storage-status" class="storage-status" role="status" hidden></span><span class="offline"><i></i> PLAY OFFLINE</span><button id="settings-open" class="icon-button" aria-label="설정"></button></div>
+    </header>
+    <main id="home" class="wrap">
+        <section class="hero">
+            <div class="hero-copy"><span class="eyebrow">40 LITTLE GAMES · NO LOGIN</span><h1>잠깐이면 충분한, <span>한 판의 즐거움.</span></h1><p>혼자서 기록에 도전하거나, 옆자리 친구와 한 수를 겨뤄요.</p><div class="hero-actions"><button class="primary" id="random-game">오늘의 한 판 <span id="random-icon" aria-hidden="true"></span></button><button class="secondary" id="browse-games">게임 둘러보기</button><span class="hero-facts">혼자서도 <i>·</i> 함께서도</span></div></div>
+            <div class="hero-art" id="hero-art" aria-hidden="true"></div>
+        </section>
+        <section class="collection" aria-labelledby="collection-title">
+            <div class="collection-top"><div><span class="eyebrow">THE COLLECTION</span><h2 id="collection-title">어떤 한 판을 할까요? <span id="game-count">40</span></h2></div><label class="search"><span id="search-icon"></span><input id="game-search" type="search" placeholder="게임 찾기" aria-label="게임 검색" autocomplete="off"><kbd>/</kbd></label></div>
+            <div class="filter-row"><div class="player-filters" role="group" aria-label="플레이 인원"><button data-player="all" class="selected" aria-pressed="true">전체 게임</button><button data-player="1" aria-pressed="false">혼자 하기 <small>33</small></button><button data-player="2" aria-pressed="false">둘이 하기 <small>13</small></button><button data-player="new" aria-pressed="false">새 게임 <small>4</small></button><button data-player="favorite" aria-pressed="false" aria-label="즐겨찾기">♡</button></div><div id="category-filters" class="category-filters" role="group" aria-label="장르"></div></div>
+            <div id="game-grid" class="game-grid"></div><p id="no-games" class="empty-state" hidden>찾는 게임이 없어요. 검색어나 필터를 바꿔 보세요.</p>
+        </section>
+    </main>
+    <main id="play" class="wrap play-page" hidden>
+        <div class="play-heading"><button id="back-home" class="back-button">← <span>게임 목록</span></button><div class="play-heading-title"><span id="play-category" class="eyebrow"></span><h1 id="play-title"></h1></div><div class="play-actions"><button id="focus-mode" class="icon-button" aria-label="집중 모드 · F" aria-pressed="false"></button><button id="new-puzzle" class="icon-button" aria-label="새 문제 · N" hidden></button><button id="restart" class="icon-button" aria-label="처음부터 다시하기"></button><button id="pause" class="icon-button" aria-label="일시정지"></button><button id="result-open" class="icon-button" aria-label="결과 다시 보기 · Esc" hidden></button></div></div>
+        <div class="play-layout"><section id="game-panel" class="game-panel" aria-label="게임"><div class="game-session-bar"><label id="game-mode-wrap">플레이 모드 <select id="game-mode" aria-label="플레이 모드, 변경하면 새 판"></select><small>변경하면 새 판</small></label><span id="practice-badge" hidden>보조 사용 · 연습 기록</span><span class="session-shortcuts">P 일시정지 <i>·</i> F 집중 모드</span></div><div id="game-hud" class="game-hud" aria-live="off"></div><div id="game-frame" class="game-frame"><div id="game-root" tabindex="-1" aria-label="게임 화면"></div><div id="game-overlay" class="game-overlay" role="region" aria-labelledby="overlay-title" hidden><div class="overlay-card"><span id="overlay-tag" class="eyebrow"></span><h2 id="overlay-title"></h2><p id="overlay-text"></p><div id="overlay-stats" class="result-stats"></div><button id="overlay-next" class="primary" hidden>다음 퍼즐 →</button><button id="overlay-action" class="primary"></button><button id="overlay-inspect" class="text-button" hidden>보드 살펴보기</button><button id="overlay-home" class="text-button">목록으로 돌아가기</button></div></div></div><p id="game-message" class="game-message" role="status"></p><div id="game-tools" class="game-tools"></div></section><aside class="game-sidebar"><div class="info-card"><span class="eyebrow">HOW TO PLAY</span><h2>한눈에 보는 규칙</h2><p id="game-description"></p><div id="game-rules"></div><div class="controls-label">조작 방법</div><div id="game-controls"></div></div><div class="info-card record-card"><span class="eyebrow">YOUR RECORD</span><p id="record-mode" class="record-mode"></p><h2 id="record-value">아직 기록이 없어요</h2><p id="record-detail">첫 번째 한 판을 시작해 보세요.</p></div><div class="side-note"><span>✦</span><p>조금 쉬어가도 괜찮아요.<br>다음 한 판은 여기 있으니까요.</p></div></aside></div>
+    </main>
+    <footer class="wrap site-footer"><span>MINI ARCADE <i>·</i> 작고 가벼운 즐거움</span><span>NO LOGIN. JUST PLAY.</span></footer>
+    <dialog id="settings-dialog"><form method="dialog"><div class="dialog-heading"><div><span class="eyebrow">MAKE IT YOURS</span><h2>플레이 설정</h2></div><button id="settings-close" class="icon-button" aria-label="설정 닫기" value="close"></button></div><label class="setting-row"><span><strong>효과음</strong><small>짧고 가벼운 합성 사운드</small></span><input type="checkbox" id="sound-setting"></label><label class="setting-row"><span><strong>움직임 줄이기</strong><small>메뉴와 타일의 전환 효과 최소화</small></span><input type="checkbox" id="motion-setting"></label><p class="settings-note">최고 기록은 게임·모드·문제별로 저장해요.<br>힌트·싱글 되돌리기는 연습 기록이에요.<br>소코반은 되돌려도 최고 기록에 도전할 수 있어요.<br>둘이 하는 게임은 한 기기를 함께 사용해요.</p><button class="primary" value="close">완료</button></form></dialog>
+    <dialog id="leave-dialog" aria-labelledby="leave-title"><form method="dialog"><span class="eyebrow">YOUR CURRENT GAME</span><h2 id="leave-title">진행 중인 판을 끝낼까요?</h2><p id="leave-text" class="leave-text"></p><div class="dialog-actions"><button class="primary" value="cancel" autofocus>계속 플레이</button><button id="leave-confirm" class="secondary" value="leave">진행 끝내기</button></div></form></dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <noscript><p class="wrap">게임을 실행하려면 JavaScript를 활성화해 주세요.</p></noscript>
+</body>
+</html>
