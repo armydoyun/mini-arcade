@@ -1,8 +1,8 @@
-import { clamp, circle, circleBox, background, text, palette, duelFinish, cpuFinish, rounded } from '../core.js';
+import { clamp, circle, circleBox, background, text, palette, duelFinish, cpuFinish, rounded, wobble } from '../core.js';
 import { effects } from '../effects.js';
 
 export default (s) => {
-    const width = 640, height = 420, { ctx } = s.canvas(width, height), paddles = [165, 165], velocities = [0, 0], scores = [0, 0], trail = [], fx = effects(s), target = s.options.mode === 'long' ? 11 : 7; let ball, countdown = 1, rallies = 0, bestRally = 0, serves = 0;
+    const width = 640, height = 420, { ctx } = s.canvas(width, height), paddles = [165, 165], velocities = [0, 0], scores = [0, 0], trail = [], fx = effects(s), target = s.options.mode === 'long' ? 11 : 7; const hitAge = [9, 9]; let ballAge = 9, ball, countdown = 1, rallies = 0, bestRally = 0, serves = 0;
     // 혼자 · 컴퓨터와: 오른쪽 패들을 컴퓨터가 움직인다. 공이 다가올 때 벽 반사까지 착지점을 예측하되, 랠리마다 조준 오차를 새로 뽑고 사람보다 조금 느리게 움직여 이길 틈을 남긴다.
     const cpu = s.options.mode === 'cpu', names = cpu ? ['나', '컴퓨터'] : ['P1', 'P2']; let aim = 0, react = 0;
     const predict = () => { if (ball.vx <= 0) return height / 2; let y = ball.y + ball.vy * ((width - 37 - ball.x) / ball.vx); const span = height - 14; y = ((y - 7) % (2 * span) + 2 * span) % (2 * span); return 7 + (y > span ? 2 * span - y : y); };
@@ -12,11 +12,11 @@ export default (s) => {
     const hud = () => s.hud([[cpu ? '나 · W / S · ↑ / ↓' : 'P1 · W / S', scores[0], 'p1'], [`먼저 ${target}점`, `RALLY ${rallies}`], [cpu ? '컴퓨터' : 'P2 · ↑ / ↓', scores[1], 'p2']]);
     s.bindKeys(['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown']); serve(); hud();
     s.run((dt) => {
-        fx.update(dt); if (cpu) { velocities[0] = ((s.down('KeyS') || s.down('ArrowDown') ? 1 : 0) - (s.down('KeyW') || s.down('ArrowUp') ? 1 : 0)) * 365; velocities[1] = countdown > 0 ? 0 : cpuSpeed(dt); } else { velocities[0] = ((s.down('KeyS') ? 1 : 0) - (s.down('KeyW') ? 1 : 0)) * 365; velocities[1] = ((s.down('ArrowDown') ? 1 : 0) - (s.down('ArrowUp') ? 1 : 0)) * 365; } for (let side = 0; side < 2; side++) { const before = paddles[side]; paddles[side] = clamp(before + velocities[side] * dt, 6, height - 94); velocities[side] = dt > 0 ? (paddles[side] - before) / dt : 0; }
+        fx.update(dt); hitAge[0] += dt; hitAge[1] += dt; ballAge += dt; if (cpu) { velocities[0] = ((s.down('KeyS') || s.down('ArrowDown') ? 1 : 0) - (s.down('KeyW') || s.down('ArrowUp') ? 1 : 0)) * 365; velocities[1] = countdown > 0 ? 0 : cpuSpeed(dt); } else { velocities[0] = ((s.down('KeyS') ? 1 : 0) - (s.down('KeyW') ? 1 : 0)) * 365; velocities[1] = ((s.down('ArrowDown') ? 1 : 0) - (s.down('ArrowUp') ? 1 : 0)) * 365; } for (let side = 0; side < 2; side++) { const before = paddles[side]; paddles[side] = clamp(before + velocities[side] * dt, 6, height - 94); velocities[side] = dt > 0 ? (paddles[side] - before) / dt : 0; }
         if (countdown > 0) { countdown -= dt; return; } trail.push({ x: ball.x, y: ball.y }); if (trail.length > 12) trail.shift();
         const steps = Math.max(1, Math.ceil(Math.hypot(ball.vx, ball.vy) * dt / 4));
         for (let n = 0; n < steps; n++) {
-            ball.x += ball.vx * dt / steps; ball.y += ball.vy * dt / steps; if (ball.y < 7 || ball.y > height - 7) { ball.y = clamp(ball.y, 7, height - 7); ball.vy *= -1; }
+            ball.x += ball.vx * dt / steps; ball.y += ball.vy * dt / steps; if (ball.y < 7 || ball.y > height - 7) { ball.y = clamp(ball.y, 7, height - 7); ball.vy *= -1; ballAge = 0; }
             for (let side = 0; side < 2; side++) {
                 const x = side === 0 ? 26 : width - 37, box = { x, y: paddles[side], w: 11, h: 88 };
                 if ((side === 0 ? ball.vx < 0 : ball.vx > 0) && circleBox(ball, 7, box)) {
@@ -25,7 +25,7 @@ export default (s) => {
                     if (Math.abs(ball.vy) < 40) ball.vy = ball.vy < 0 ? -40 : 40;
                     ball.vx = Math.sqrt(speed * speed - ball.vy * ball.vy) * (side === 0 ? 1 : -1);
                     ball.x = side === 0 ? x + 19 : x - 8;
-                    rallies++;
+                    rallies++; hitAge[side] = 0; ballAge = 0;
                     bestRally = Math.max(bestRally, rallies);
                     fx.burst(ball.x, ball.y, side === 0 ? palette.coral : palette.blue, 7, 60);
                     s.sound(side === 0 ? 400 : 530, .035);
@@ -47,14 +47,14 @@ export default (s) => {
         ctx.beginPath();
         ctx.arc(width / 2, height / 2, 45, 0, Math.PI * 2);
         ctx.stroke();
-        rounded(ctx, 26, paddles[0], 11, 88, palette.coral, 5);
-        rounded(ctx, width - 37, paddles[1], 11, 88, palette.blue, 5);
+        // 공을 받은 패들은 뒤로 눌렸다가 튕겨 돌아온다
+        for (const side of [0, 1]) { const w = wobble(hitAge[side], 1, 24, 8), x = side ? width - 37 + w * 5 : 26 - w * 5; rounded(ctx, x - Math.abs(w) * 2, paddles[side] - w * 4, 11 + Math.abs(w) * 4, 88 + w * 8, side ? palette.blue : palette.coral, 6); }
         trail.forEach((p, i) => {
             ctx.globalAlpha = i / trail.length * .22;
             circle(ctx, p.x, p.y, 6 * i / trail.length, palette.ink);
         });
         ctx.globalAlpha = 1;
-        circle(ctx, ball.x, ball.y, 7, palette.ink);
+        { const w = wobble(ballAge, .35, 30, 10); if (Math.abs(w) < 1e-3) circle(ctx, ball.x, ball.y, 7, palette.ink); else { ctx.fillStyle = palette.ink; ctx.beginPath(); ctx.ellipse(ball.x, ball.y, 7 * (1 - w), 7 * (1 + w * .8), Math.atan2(ball.vy, ball.vx), 0, Math.PI * 2); ctx.fill(); } }
         if (countdown > 0) {
             text(ctx, 'SERVE', width / 2, height / 2 - 65, 16, palette.muted);
             rounded(ctx, width / 2 - 35, height / 2 - 44, 70 * Math.max(0, 1 - countdown / 1.05), 3, palette.blue, 1);

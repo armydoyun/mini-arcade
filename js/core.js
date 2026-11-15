@@ -185,3 +185,7 @@ export const duelFinish = (s, winner, detail = '') => s.finish({ winner, title: 
 // 혼자 하기(컴퓨터 상대) 결과. 기록은 대전과 같이 P1(나)·P2(컴퓨터) 승수로 남는다.
 export const cpuFinish = (s, winner, detail = '') => s.finish({ winner, title: winner === 1 ? '승리!' : winner === 2 ? '컴퓨터 승리' : '무승부!', text: detail || (winner === 1 ? '컴퓨터를 이겼어요. 한 판 더 해 볼까요?' : winner === 2 ? '아깝네요. 되돌리기로 수를 다시 읽어 보세요.' : '팽팽한 대결이었어요. 다시 도전해요.') });
 export const cpuHud = (s, turn, p1, p2) => s.hud([['나', p1, `p1 ${turn === 1 ? 'active' : ''}`], ['현재 차례', turn === 1 ? '나' : turn === 2 ? '컴퓨터 생각 중…' : '대결 종료'], ['컴퓨터', p2, `p2 ${turn === 2 ? 'active' : ''}`]]);
+// 쫀득한 움직임 도우미. 판정과 무관하게 그리기 크기·위치에만 곱한다.
+// elastic: 0→1로 가며 한 번 넘쳤다 돌아오는 등장 곡선 / wobble: 충격 뒤 잦아드는 흔들림(0으로 수렴)
+export const elastic = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : 2 ** (-10 * t) * Math.sin((t * 10 - .75) * (2 * Math.PI / 3)) + 1);
+export const wobble = (age, amount = 1, frequency = 22, damping = 9) => (age < 0 || age > 1.2 ? 0 : amount * Math.exp(-damping * age) * Math.sin(frequency * age));

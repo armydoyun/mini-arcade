@@ -43,7 +43,7 @@ export default (s) => {
                 hud();
             } else if (shot.y < -20) shots.splice(i, 1);
         }
-        for (let i = enemyShots.length - 1; i >= 0; i--) { const shot = enemyShots[i], oldY = shot.y; shot.y += (155 + wave * 12) * dt; const swept = { ...shot, y: oldY, h: shot.h + shot.y - oldY }; if (shieldHit(swept, true)) { enemyShots.splice(i, 1); continue; } if (immunity <= 0 && intersects(swept, player)) { enemyShots.splice(i, 1); lives--; fx.shake(6); fx.flash(palette.coral); immunity = 1.4; fx.burst(player.x + 18, player.y, palette.coral, 18); hud(); s.sound(130, .1); } else if (shot.y > height) enemyShots.splice(i, 1); }
+        for (let i = enemyShots.length - 1; i >= 0; i--) { const shot = enemyShots[i], oldY = shot.y; shot.y += (155 + wave * 12) * dt; const swept = { ...shot, y: oldY, h: shot.h + shot.y - oldY }; if (shieldHit(swept, true)) { enemyShots.splice(i, 1); continue; } if (immunity <= 0 && intersects(swept, player)) { enemyShots.splice(i, 1); lives--; fx.shake(6); immunity = 1.4; fx.burst(player.x + 18, player.y, palette.coral, 18); hud(); s.sound(130, .1); } else if (shot.y > height) enemyShots.splice(i, 1); }
         shields.forEach((cell) => { if (cell.alive && enemies.some((enemy) => intersects(cell, { ...enemy, x: enemy.x + offset, y: enemy.y + descent }))) cell.alive = false; });
         if (lives <= 0 || enemies.some((enemy) => enemy.y + descent + enemy.h >= player.y)) { s.finish({ score, win: false, title: '끝까지 지켜냈어요!', text: `${score}점 · ${wave}번째 웨이브. 방벽도 내 탄환에 부서지니 발사 위치를 골라요.` }); return; }
         if (!enemies.length && transition <= 0) { transition = 1.2; enemyShots.length = 0; score += 150; hud(); fx.label(300, 180, 'WAVE CLEAR +150', palette.green); }

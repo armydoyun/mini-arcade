@@ -18,7 +18,7 @@ export default (s) => {
             enemy.y += enemy.vy * dt;
             const d = distance(enemy, player);
             if (d < enemy.r + 7 && dash <= 0) {
-                fx.burst(player.x, player.y, palette.coral, 26, 150); fx.ring(player.x, player.y, palette.coral, 60); fx.shake(7); fx.flash(palette.coral);
+                fx.burst(player.x, player.y, palette.coral, 26, 150); fx.ring(player.x, player.y, palette.coral, 60); fx.shake(7);
                 s.finish({ score, recordText: `${s.time.toFixed(1)}초 · ${score}점`, win: false, title: '아슬아슬한 회피였어요!', text: `${s.time.toFixed(1)}초 생존 · 근접 회피 ${grazes}번 · ${score}점` });
                 return;
             } if (!enemy.grazed && d >= enemy.r + 7 && d < enemy.r + 22) {

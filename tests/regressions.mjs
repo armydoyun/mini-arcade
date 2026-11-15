@@ -121,8 +121,10 @@ const pongBounce = (release) => {
     let call = 0; Math.random = () => call++ === 0 ? .1 : .999;
     const sample = mount('pong'); let ball, previous, paddle;
     sample.root.children.find((element) => element.tagName === 'CANVAS').paint = (name, args) => {
-        if (name === 'roundRect' && args[2] === 11 && args[3] === 88) paddle = args[1];
+        // 오른쪽 패들의 중심 위치. 공을 받은 패들은 중심을 유지한 채 잠깐 찌그러진다.
+        if (name === 'roundRect' && args[0] > 500 && args[2] < 20 && args[3] > 80) paddle = Math.round(args[1] + args[3] / 2 - 44);
         if (name === 'arc' && args[2] === 7) ball = { x: args[0], y: args[1] };
+        if (name === 'ellipse' && args[2] < 9) ball = { x: args[0], y: args[1] }; // 튕길 때 찌그러진 공
     };
     win.emit('keydown', { code: 'ArrowUp' }); let outcome;
     for (let n = 0; n < 360; n++) {
