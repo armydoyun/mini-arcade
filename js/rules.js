@@ -350,3 +350,64 @@ export const mancalaMove = (state, pit) => {
     const extra = !finished && at === store;
     return { state: { board: next, turn: finished ? 0 : extra ? turn : 3 - turn, moves: state.moves + 1 }, steps, capture, extra, finished, winner: finished ? next[6] === next[13] ? 0 : next[6] > next[13] ? 1 : 2 : null };
 };
+
+// 지뢰찾기 논리 풀이기: 숫자 하나의 직접 추론 + 두 숫자의 부분집합 추론 + 남은 지뢰 수 추론만으로 판을 연다.
+// 운에 기대는 추측 없이 끝까지 열 수 있으면 solved=true. 막힌 경우 열린 칸(open)을 돌려줘 생성기가 배치를 고칠 수 있게 한다.
+export const minesSolve = (mines, columns, rows, start) => {
+    const total = columns * rows, near = (i) => mineNeighbors(i, columns, rows), open = new Uint8Array(total), flag = new Uint8Array(total);
+    const counts = Array.from({ length: total }, (_, i) => near(i).filter((n) => mines.has(n)).length);
+    let opened = 0, flagged = 0; const safe = total - mines.size;
+    const reveal = (i) => {
+        const queue = [i];
+        for (let head = 0; head < queue.length; head++) { const at = queue[head]; if (open[at]) continue; open[at] = 1; opened++; if (!counts[at]) for (const n of near(at)) if (!open[n] && !flag[n]) queue.push(n); }
+    };
+    const mark = (n) => { if (!flag[n]) { flag[n] = 1; flagged++; } };
+    if (mines.has(start)) return { solved: false, open, flag };
+    reveal(start);
+    const constraint = (i) => { const unknown = []; let marked = 0; for (const n of near(i)) { if (flag[n]) marked++; else if (!open[n]) unknown.push(n); } return { unknown, left: counts[i] - marked }; };
+    for (let progress = true; progress && opened < safe;) {
+        progress = false; const frontier = [];
+        for (let i = 0; i < total; i++) {
+            if (!open[i] || !counts[i]) continue; const c = constraint(i); if (!c.unknown.length) continue;
+            if (c.left === 0) { c.unknown.forEach(reveal); progress = true; }
+            else if (c.left === c.unknown.length) { c.unknown.forEach(mark); progress = true; }
+            else frontier.push({ i, ...c, set: new Set(c.unknown) });
+        }
+        if (progress) continue;
+        search: for (const a of frontier) for (const b of frontier) {
+            if (a === b || a.unknown.length >= b.unknown.length || Math.abs(a.i % columns - b.i % columns) > 2 || Math.abs(Math.floor(a.i / columns) - Math.floor(b.i / columns)) > 2) continue;
+            if (!a.unknown.every((n) => b.set.has(n))) continue;
+            const rest = b.unknown.filter((n) => !a.set.has(n)), extra = b.left - a.left;
+            if (extra === 0) { rest.forEach(reveal); progress = true; break search; }
+            if (extra === rest.length) { rest.forEach(mark); progress = true; break search; }
+        }
+        if (progress) continue;
+        const unknownAll = []; for (let i = 0; i < total; i++) if (!open[i] && !flag[i]) unknownAll.push(i);
+        const remaining = mines.size - flagged;
+        if (remaining === 0) { unknownAll.forEach(reveal); progress = true; } else if (remaining === unknownAll.length) { unknownAll.forEach(mark); progress = true; }
+    }
+    return { solved: opened === safe, open, flag };
+};
+export const minesSolvable = (mines, columns, rows, start) => minesSolve(mines, columns, rows, start).solved;
+
+// 추측 없는 판 생성: 첫 클릭 주변 3×3을 비우고 무작위로 심은 뒤, 풀이기가 막히면 경계(열린 칸 옆)의 지뢰 하나를
+// 아직 아무 정보도 없는 안쪽 칸으로 옮겨 다시 푼다. 지뢰 수와 첫 클릭 안전은 그대로이고, 결과는 항상 풀이기로 다시 확인한다.
+export const minesNoGuess = (columns, rows, total, start, rand = Math.random, budgetMs = 1500) => {
+    const near = (i) => mineNeighbors(i, columns, rows), safe = new Set([start, ...near(start)]), cells = Array.from({ length: columns * rows }, (_, n) => n).filter((n) => !safe.has(n));
+    const pickFrom = (list) => list[Math.floor(rand() * list.length)];
+    const began = Date.now(); let tries = 0, mines;
+    do {
+        tries++; const pool = [...cells];
+        for (let k = 0; k < total; k++) { const j = k + Math.floor(rand() * (pool.length - k)); [pool[k], pool[j]] = [pool[j], pool[k]]; }
+        mines = new Set(pool.slice(0, total));
+        for (let repair = 0; repair < columns * rows; repair++) {
+            const { solved, open, flag } = minesSolve(mines, columns, rows, start);
+            if (solved) return { mines, solved: true, tries };
+            const seen = (i) => near(i).some((n) => open[n]);
+            const border = [...mines].filter((m) => !flag[m] && seen(m)), inside = cells.filter((i) => !open[i] && !mines.has(i) && !seen(i));
+            if (!border.length || !inside.length) break;
+            mines.delete(pickFrom(border)); mines.add(pickFrom(inside));
+        }
+    } while (Date.now() - began < budgetMs);
+    return { mines, solved: false, tries };
+};
