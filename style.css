@@ -1,4 +1,4 @@
-:root { color-scheme: dark; --bg: #101318; --panel: #181e26; --panel-2: #222c38; --line: #303b49; --ink: #f0f2f5; --muted: #a1adbc; --accent: #b9f86b; --coral: #ff8e7a; --blue: #82b6ff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif; }
+:root { --spring: cubic-bezier(.34, 1.56, .64, 1); --squish: cubic-bezier(.5, 1.8, .4, .8); color-scheme: dark; --bg: #101318; --panel: #181e26; --panel-2: #222c38; --line: #303b49; --ink: #f0f2f5; --muted: #a1adbc; --accent: #b9f86b; --coral: #ff8e7a; --blue: #82b6ff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif; }
 * { box-sizing: border-box; }
 body { min-width: 940px; margin: 0; background: var(--bg); color: var(--ink); font-size: 14px; }
 button, input, select { font: inherit; }
@@ -181,7 +181,7 @@ h2 { font-size: 22px; margin: 8px 0 0; letter-spacing: -.7px; }
 .tile-2048 .cell[data-value="32"] { background: #d67460; color: #291512; }
 .tile-2048 .cell[data-value="64"] { background: #c14c47; }
 .tile-2048 .cell.high { background: #badc78; color: #26351b; font-size: clamp(18px, 3vw, 29px); }
-.tile-2048 .new-tile { animation: tile-pop .15s ease-out; }
+.tile-2048 .new-tile { animation: tile-pop .32s var(--spring); }
 .tile-2048 .merged-tile { box-shadow: inset 0 0 0 2px #fff6; }
 .mines .cell { background: linear-gradient(145deg, #41556b, #2c3b4e); box-shadow: inset 0 1px 0 #ffffff1a; }
 .mines .cell.open { background: #1c2937; border-color: #324252; box-shadow: none; }
@@ -305,7 +305,7 @@ dialog::backdrop { background: #080d14cc; backdrop-filter: blur(4px); }
 .dialog-actions { display: flex; gap: 9px; }
 .dialog-actions > button { flex: 1; }
 .toast { position: fixed; bottom: 20px; left: 50%; z-index: 30; transform: translateX(-50%); max-width: 540px; padding: 12px 18px; border-radius: 9px; background: #d8e9c7; color: #203218; box-shadow: 0 5px 25px #0005; font-size: 12px; text-align: center; }
-@keyframes tile-pop { from { transform: scale(.78); opacity: .45; } to { transform: scale(1); opacity: 1; } }
+@keyframes tile-pop { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes card-open { from { transform: rotateY(65deg); } to { transform: rotateY(0); } }
 @keyframes victory-pulse { 50% { filter: brightness(1.2); } }
 .reduce-motion *, .reduce-motion *:before, .reduce-motion *:after { transition: none !important; animation: none !important; }
@@ -447,11 +447,11 @@ dialog::backdrop { background: #080d14cc; backdrop-filter: blur(4px); }
 @keyframes beam-arrive { from { opacity: .3; } to { opacity: 1; } }
 @keyframes capture-arrive { 50% { box-shadow: inset 0 0 0 2px #f5d47d; filter: brightness(1.25); } }
 /* v0.8 · 지뢰찾기 물결 열기·폭발 */
-.mines .cell.wave { animation: mine-open .26s ease-out both; animation-delay: var(--delay, 0ms); }
+.mines .cell.wave { animation: mine-open .34s var(--spring) both; animation-delay: var(--delay, 0ms); }
 .mines .cell.boom { animation: mine-boom .34s ease-out both; animation-delay: var(--delay, 0ms); }
 .mines .cell.exploded { animation: mine-blast .5s ease-out; }
 .mines .cell.flagged { animation: flag-pop .18s ease-out; }
-@keyframes mine-open { from { transform: scale(.55); opacity: .2; background: #4f6782; } to { transform: scale(1); opacity: 1; } }
+@keyframes mine-open { from { transform: scale(.4); opacity: .2; background: #4f6782; } to { transform: scale(1); opacity: 1; } }
 @keyframes mine-boom { from { transform: scale(.6); opacity: .3; } to { transform: scale(1); opacity: 1; } }
 @keyframes mine-blast { from { box-shadow: 0 0 0 0 #ff8e7a99; } to { box-shadow: 0 0 0 12px #ff8e7a00; } }
 @keyframes flag-pop { 0% { transform: translateY(-5px) scale(.7); } 100% { transform: none; } }
@@ -459,12 +459,75 @@ dialog::backdrop { background: #080d14cc; backdrop-filter: blur(4px); }
 .memory { perspective: 900px; }
 .memory .cell { transition: transform .2s ease, box-shadow .2s ease; }
 .memory .cell:not(.revealed):hover { transform: translateY(-2px); box-shadow: 0 6px 14px #0006; }
-.memory .cell.revealed { animation: card-flip .26s cubic-bezier(.2, .8, .3, 1); }
+.memory .cell.revealed { animation: card-flip .38s var(--spring); }
 .memory .cell.pair { animation: card-pair .5s ease-out; }
 .memory .cell.miss { animation: card-miss .38s ease-in-out; border-color: #ff8e7a; }
 @keyframes card-flip { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
-@keyframes card-pair { 0% { transform: scale(1); } 40% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes card-pair { 0% { transform: scale(1); } 30% { transform: scale(1.14, .9); } 55% { transform: scale(.95, 1.06); } 78% { transform: scale(1.03, .98); } 100% { transform: scale(1); } }
 @keyframes card-miss { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-4px); } 60% { transform: translateX(3px); } }
 /* v0.8 · 결과 카드는 아래에서 살짝 떠오르며 나타난다 */
-.game-overlay.result .overlay-card { animation: card-rise .32s cubic-bezier(.2, .8, .3, 1); }
-@keyframes card-rise { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+.game-overlay.result .overlay-card { animation: card-rise .5s var(--spring); }
+@keyframes card-rise { from { opacity: 0; transform: translateY(24px) scale(.9); } to { opacity: 1; transform: none; } }
+/* v0.9 · 쫀득한 움직임: 눌림·튕김·찌그러짐. 모양은 그대로, 움직임에만 탄성을 준다. */
+button, .game-link { transition: transform .28s var(--spring), background-color .15s, border-color .15s, box-shadow .2s; }
+button:not(:disabled):active, .game-link:active { transform: scale(.94); transition-duration: .08s; }
+.primary:not(:disabled):hover, .secondary:not(:disabled):hover, .icon-button:not(:disabled):hover, .control-button:not(:disabled):hover { transform: translateY(-2px); }
+.game-card { transition: transform .35s var(--spring), box-shadow .25s, border-color .2s; }
+.game-card:hover { transform: translateY(-4px) rotate(-.4deg); }
+.game-card:hover .game-art svg { animation: art-wiggle .55s var(--spring); }
+@keyframes art-wiggle { 0% { transform: scale(1); } 35% { transform: scale(1.08, .94); } 65% { transform: scale(.97, 1.04); } 100% { transform: scale(1); } }
+.board-grid .cell { transition: transform .26s var(--spring), background-color .15s, border-color .15s, box-shadow .2s; }
+.board-grid .cell:not(:disabled):active { transform: scale(.88); transition-duration: .07s; }
+/* 말 놓기: 작게 눌렸다가 넘치듯 커지고 자리를 잡는다 */
+.ttt .cell.p1, .ttt .cell.p2 { animation: piece-pop .42s var(--spring); }
+.gomoku .cell.p1:after, .gomoku .cell.p2:after { animation: piece-pop .4s var(--spring); }
+@keyframes piece-pop { 0% { transform: scale(.2); } 60% { transform: scale(1.12, .9); } 80% { transform: scale(.96, 1.04); } 100% { transform: scale(1); } }
+/* 사목: 위에서 떨어져 바닥에 닿으면 찌그러졌다 튕긴다 */
+.connect4 .cell.p1, .connect4 .cell.p2 { position: relative; z-index: 1; animation: c4-drop .55s linear; }
+@keyframes c4-drop { 0% { transform: translateY(-420%); animation-timing-function: cubic-bezier(.5, 0, 1, 1); } 55% { transform: translateY(0) scale(1.12, .82); animation-timing-function: ease-out; } 72% { transform: translateY(-14%) scale(.95, 1.06); animation-timing-function: ease-in; } 86% { transform: translateY(0) scale(1.04, .96); } 100% { transform: none; } }
+/* 오델로: 놓이거나 뒤집힐 때 돌이 반 바퀴 돌며 튕긴다(흑·백 이름이 달라 뒤집힐 때마다 다시 재생) */
+.reversi .cell.p1:after { animation: flip-black .46s var(--spring); }
+.reversi .cell.p2:after { animation: flip-white .46s var(--spring); }
+@keyframes flip-black { 0% { transform: rotateY(90deg) scale(.7); } 100% { transform: none; } }
+@keyframes flip-white { 0% { transform: rotateY(-90deg) scale(.7); } 100% { transform: none; } }
+/* 2048: 합쳐진 타일은 납작해졌다 늘어나며 자리를 잡는다 */
+.tile-2048 .merged-tile { animation: tile-merge .38s var(--squish); }
+@keyframes tile-merge { 0% { transform: scale(1); } 35% { transform: scale(1.22, .86); } 65% { transform: scale(.94, 1.08); } 100% { transform: scale(1); } }
+/* Lights Out: 켜질 때와 꺼질 때 모두 통통 튄다 */
+.lights .cell.lit { animation: light-on .36s var(--spring); }
+.lights .cell:not(.lit) { animation: light-off .32s var(--spring); }
+@keyframes light-on { 0% { transform: scale(.82); } 100% { transform: scale(1); } }
+@keyframes light-off { 0% { transform: scale(1.08); } 100% { transform: scale(1); } }
+.nonogram .cell.filled { animation: fill-pop .3s var(--spring); }
+.nonogram .cell.mark { animation: mark-pop .3s var(--spring); }
+@keyframes fill-pop { 0% { transform: scale(.6); } 100% { transform: scale(1); } }
+@keyframes mark-pop { 0% { transform: scale(.3) rotate(-30deg); } 100% { transform: none; } }
+.mines .cell.flagged { animation: flag-drop .38s var(--spring); }
+@keyframes flag-drop { 0% { transform: translateY(-40%) scale(.6); } 100% { transform: none; } }
+/* HUD 숫자는 바뀔 때 통 튄다(app.js가 bump 클래스를 붙인다) */
+.hud-item strong { display: block; }
+/* v0.9 · 퍼즐·턴제 게임의 쫀득한 반응 */
+.pipe-tile > * { transition: transform .38s var(--spring); }
+.laser-tile > * { transition: transform .38s var(--spring); }
+.simon .cell { transition: transform .22s var(--spring), filter .12s, box-shadow .12s; }
+.simon .cell.flash { transform: scale(1.06); animation: simon-press .32s var(--squish); }
+@keyframes simon-press { 0% { transform: scale(.94); } 100% { transform: scale(1.06); } }
+.logic-cell.puzzle-selected, .sudoku-board .puzzle-selected { animation: select-pop .3s var(--spring); }
+@keyframes select-pop { 0% { transform: scale(.9); } 100% { transform: scale(1); } }
+.hex-cell { transition: transform .3s var(--spring), background-color .15s; }
+.hex-cell.p1, .hex-cell.p2 { animation: hex-pop .42s var(--spring); }
+@keyframes hex-pop { 0% { transform: scale(.4); } 100% { transform: scale(.94); } }
+.edge.p1:after, .edge.p2:after { animation: edge-draw .36s var(--spring); }
+.edge:not(.vertical).p1:after, .edge:not(.vertical).p2:after { transform-origin: center; }
+@keyframes edge-draw { 0% { transform: scale(.1, 1.8); } 100% { transform: none; } }
+.edge.vertical.p1:after, .edge.vertical.p2:after { animation-name: edge-draw-v; }
+@keyframes edge-draw-v { 0% { transform: scale(1.8, .1); } 100% { transform: none; } }
+.box-owner.p1, .box-owner.p2 { animation: piece-pop .45s var(--spring); }
+.mancala-pit.seed-arrival { animation: pit-bump .3s var(--squish); }
+@keyframes pit-bump { 0% { transform: scale(1); } 40% { transform: scale(1.1, .92); } 100% { transform: scale(1); } }
+.same-piece { transition: transform .3s var(--spring), opacity .2s, filter .15s, box-shadow .15s; }
+.same-tile.selected-group .same-piece { transform: scale(1.06); }
+.same-tile.leaving .same-piece { transition: transform .22s cubic-bezier(.6, -0.4, .7, .2), opacity .22s; }
+.sliding .cell.movable:hover { transform: scale(1.04); }
+.warehouse-box.on-goal:before { animation: goal-arrive .4s var(--spring); }
+.flood .cell.territory { transition: background-color .25s, transform .3s var(--spring); }

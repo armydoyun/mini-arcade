@@ -1,11 +1,11 @@
-import { random, clamp, background, palette, circleBox, text } from '../core.js';
+import { random, clamp, background, palette, circleBox, text, wobble } from '../core.js';
 import { effects } from '../effects.js';
 
 export default (s) => {
-    const width = 600, height = 450, { ctx, canvas, point } = s.canvas(width, height), objects = [], fx = effects(s); let x = 300, score = 0, lives = 5, timer = .6, combo = 0, bestCombo = 0, targetX = null;
+    const width = 600, height = 450, { ctx, canvas, point } = s.canvas(width, height), objects = [], fx = effects(s); let catchAge = 9, x = 300, score = 0, lives = 5, timer = .6, combo = 0, bestCombo = 0, targetX = null;
     const hud = () => s.hud([['SCORE', score], ['LIVES', '♥'.repeat(Math.max(0, lives))], ['COMBO', `${combo} · ×${Math.min(4, 1 + Math.floor(combo / 5))}`], ['남은 시간', `${Math.max(0, Math.ceil(60 - s.time))}초`]]);
     s.bindKeys(['ArrowLeft', 'ArrowRight']); const move = (event) => { if (s.active()) targetX = clamp(point(event).x, 39, width - 39); }; s.on(canvas, 'pointermove', move); s.on(canvas, 'pointerdown', (event) => { if (s.active()) { canvas.setPointerCapture(event.pointerId); move(event); } });
-    s.run((dt) => {
+    s.run((dt) => { catchAge += dt;
         fx.update(dt); const direction = (s.down('ArrowRight') ? 1 : 0) - (s.down('ArrowLeft') ? 1 : 0);
         if (direction) { x = clamp(x + direction * 430 * dt, 39, width - 39); targetX = null; }
         else if (targetX !== null) x += clamp(targetX - x, -430 * dt, 430 * dt);
@@ -26,7 +26,7 @@ export default (s) => {
                     fx.label(x, 383, '+1 LIFE', palette.green);
                     s.sound(750);
                 } else {
-                    combo++;
+                    combo++; catchAge = 0;
                     bestCombo = Math.max(bestCombo, combo);
                     const gain = (object.type === 'gold' ? 30 : 10) * Math.min(4, 1 + Math.floor(combo / 5));
                     score += gain;
@@ -60,12 +60,14 @@ export default (s) => {
         });
         ctx.strokeStyle = combo >= 15 ? palette.yellow : palette.blue;
         ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(x - 38, 394);
-        ctx.lineTo(x - 29, 420);
-        ctx.lineTo(x + 29, 420);
-        ctx.lineTo(x + 38, 394);
-        ctx.stroke();
+        // 별을 받으면 바구니가 아래로 눌렸다가 탄성 있게 튀어 오른다
+        const w = wobble(catchAge, 1, 24, 8), lip = 38 + w * 5, base = 29 + w * 3, depth = 420 + w * 4;
+        ctx.lineJoin = 'round'; ctx.beginPath();
+        ctx.moveTo(x - lip, 394 + w * 2);
+        ctx.lineTo(x - base, depth);
+        ctx.lineTo(x + base, depth);
+        ctx.lineTo(x + lip, 394 + w * 2);
+        ctx.stroke(); ctx.lineJoin = 'miter';
         fx.draw(ctx);
     }); hud(); s.message('별을 놓치면 콤보가 끊겨요. 생명은 붉은 가시에만 잃어요 · 초록 + 생명 회복.'); s.ready('Catch Game', '60초 동안 별을 모아요. 연속으로 받으면 최대 4배, 큰 금빛 별은 기본 점수가 3배예요. 놓친 별은 콤보만 끊어요.');
 };

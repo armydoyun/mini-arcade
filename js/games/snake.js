@@ -1,11 +1,11 @@
-import { random, palette, rounded, circle } from '../core.js';
+import { random, palette, rounded, circle, elastic, wobble } from '../core.js';
 import { effects } from '../effects.js';
 
 // 20×20 판을 12px 여백 안쪽에 그린다. 칸은 옅은 체크무늬로 또렷하게, 경계는 클래식·고속은 붉은 실선(닿으면 끝),
 // 경계 통과는 초록 점선(반대편으로 이어짐) 한 줄로만 표시해 어디까지가 판인지 한눈에 보이게 한다.
 export default (s) => {
     const size = 20, cell = 24, wall = 12, side = size * cell + wall * 2, { ctx } = s.canvas(side, side), fx = effects(s), body = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }], turns = [];
-    const wrap = s.options.mode === 'wrap', rush = s.options.mode === 'rush'; let direction = { x: 1, y: 0 }, food, bonus = null, score = 0, eaten = 0, timer = 0, foodAge = 0, gulps = [];
+    const wrap = s.options.mode === 'wrap', rush = s.options.mode === 'rush'; let direction = { x: 1, y: 0 }, food, bonus = null, score = 0, eaten = 0, timer = 0, foodAge = 0, gulps = [], headAge = 1;
     const px = (v) => wall + v * cell, center = (v) => wall + v * cell + cell / 2;
     // 속도는 먹은 먹이 수로만 오른다. 보너스 점수로 갑자기 빨라지지 않는다.
     const interval = () => 1 / Math.min(rush ? 20 : 15, (rush ? 11 : 7) + eaten / 9);
@@ -18,7 +18,7 @@ export default (s) => {
     const steer = (code) => { const next = { ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0], ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1] }[code]; if (!next || turns.length >= 2) return; const last = turns.at(-1) || direction; if (next[0] === last.x && next[1] === last.y) return; if (next[0] !== -last.x || next[1] !== -last.y) turns.push({ x: next[0], y: next[1] }); };
     s.bindKeys(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyW', 'KeyA', 'KeyS', 'KeyD'], steer); spawn(); hud();
     s.run((dt) => {
-        fx.update(dt); foodAge += dt;
+        fx.update(dt); foodAge += dt; headAge += dt; if (bonus) bonus.age = (bonus.age || 0) + dt;
         if (bonus) { const before = Math.ceil(bonus.life); bonus.life -= dt; if (bonus.life <= 0) { bonus = null; hud(); } else if (Math.ceil(bonus.life) !== before) hud(); }
         timer += dt; if (timer < interval()) return; timer -= interval();
         const head = { x: body[0].x + direction.x, y: body[0].y + direction.y }; if (wrap) { head.x = (head.x + size) % size; head.y = (head.y + size) % size; }
@@ -30,12 +30,12 @@ export default (s) => {
         body.unshift(head); gulps = gulps.map((g) => g + 1).filter((g) => g < body.length);
         if (!grow) body.pop();
         if (eating) {
-            eaten++; score += 10; gulps.push(0); fx.ring(center(food.x), center(food.y), palette.coral, 22, .3); s.sound(560 + (eaten % 5) * 40);
+            eaten++; score += 10; gulps.push(0); headAge = 0; fx.ring(center(food.x), center(food.y), palette.coral, 22, .3); s.sound(560 + (eaten % 5) * 40);
             if (body.length === size * size) { hud(); s.finish({ score, title: '완벽한 스네이크!', text: '400칸을 전부 채웠어요.' }); return; }
             spawn(); if (eaten % 5 === 0 && !bonus) spawnBonus();
         }
-        if (golden) { const gain = 20 + Math.ceil(bonus.life) * 10; score += gain; gulps.push(0); fx.ring(center(bonus.x), center(bonus.y), palette.yellow, 34); fx.label(center(bonus.x), px(bonus.y) - 4, `+${gain}`, palette.yellow); s.sound(880, .09); bonus = null; }
-        if (turns.length) direction = turns.shift(); hud();
+        if (golden) { const gain = 20 + Math.ceil(bonus.life) * 10; score += gain; gulps.push(0); headAge = 0; fx.ring(center(bonus.x), center(bonus.y), palette.yellow, 34); fx.label(center(bonus.x), px(bonus.y) - 4, `+${gain}`, palette.yellow); s.sound(880, .09); bonus = null; }
+        if (turns.length) { direction = turns.shift(); if (headAge > .14) headAge = .14; } hud();
     }, () => {
         // 판: 체크무늬 칸 + 단단한 벽(또는 포털 점선). 칸 경계가 흐려 보이지 않도록 명도 차이를 분명히 둔다.
         ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, side, side);
@@ -45,14 +45,14 @@ export default (s) => {
         ctx.beginPath(); ctx.roundRect(wall - 3, wall - 3, side - wall * 2 + 6, side - wall * 2 + 6, 6); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
         ctx.lineWidth = 1;
         if (food) { // 먹이: 나타날 때 부드럽게 커지고 아주 가볍게 숨 쉰다
-            const grow = Math.min(1, foodAge * 5), ease = 1 - (1 - grow) ** 3;
+            const ease = elastic(foodAge * 1.6);
             circle(ctx, center(food.x), center(food.y), (7 + Math.sin(s.time * 4) * .5) * ease, palette.coral);
         }
         if (bonus) { // 보너스: 노란 점 + 남은 시간을 보여 주는 얇은 고리. 마지막 2초는 천천히 깜빡인다
             const x = center(bonus.x), y = center(bonus.y);
             ctx.globalAlpha = bonus.life < 2 ? .45 + Math.abs(Math.sin(s.time * 5)) * .55 : 1;
             ctx.strokeStyle = palette.yellow; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 10, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * bonus.life / BONUS_LIFE); ctx.stroke(); ctx.lineWidth = 1;
-            circle(ctx, x, y, 5.5, palette.yellow); ctx.globalAlpha = 1;
+            circle(ctx, x, y, 5.5 * elastic((bonus.age || 0) * 1.6), palette.yellow); ctx.globalAlpha = 1;
         }
         const fraction = Math.min(1, timer / interval());
         for (let i = body.length - 1; i >= 0; i--) {
@@ -66,7 +66,7 @@ export default (s) => {
             }
             const x = (part.x + (target.x - part.x) * fraction) * cell, y = (part.y + (target.y - part.y) * fraction) * cell;
             const positions = wrap ? [[x, y], [x < 0 ? x + size * cell : x - size * cell, y], [x, y < 0 ? y + size * cell : y - size * cell]] : [[x, y]];
-            const fat = gulps.includes(i) ? 3 : 0, taper = Math.max(0, Math.min(3, (i - body.length + 4))), inset = 2 - fat + taper;
+            const fat = gulps.includes(i) ? 3 : !i ? wobble(headAge, 2.6, 26, 8) : 0, taper = Math.max(0, Math.min(3, (i - body.length + 4))), inset = 2 - fat + taper;
             ctx.save(); ctx.beginPath(); ctx.rect(wall, wall, size * cell, size * cell); ctx.clip();
             positions.forEach(([xx, yy]) => {
                 const bx = wall + xx, by = wall + yy;

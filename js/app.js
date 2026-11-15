@@ -1,5 +1,5 @@
 import { games } from './catalog.js';
-import { createSession, node, formatTime, random } from './core.js';
+import { createSession, node, formatTime, random, reducedMotion } from './core.js';
 import { icon, gameArt } from './icons.js';
 
 const $ = (id) => document.getElementById(id), storageKey = 'mini-arcade-v1';
@@ -174,7 +174,11 @@ const start = (game, extra = {}) => {
             items.forEach(([label, value, style = ''], index) => {
                 const item = $('game-hud').children[index]; item.className = `hud-item ${style}`;
                 if (item.children[0].textContent !== String(label)) item.children[0].textContent = label;
-                if (item.children[1].textContent !== String(value)) item.children[1].textContent = String(value);
+                if (item.children[1].textContent !== String(value)) {
+                    const previous = item.children[1].textContent; item.children[1].textContent = String(value);
+                    // 점수·개수가 바뀌면 숫자가 통 튄다. 매 순간 바뀌는 시계·속도 표시는 튀지 않는다.
+                    if (previous && !reducedMotion() && !/TIME|시간|속도|초$|^\d+:\d\d/.test(`${label} ${value}`)) item.children[1].animate?.([{ transform: 'scale(1)' }, { transform: 'scale(1.28, .82)' }, { transform: 'scale(.92, 1.1)' }, { transform: 'scale(1.04, .97)' }, { transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
+                }
             });
         },
         message: (value) => { if ($('game-message').textContent !== value) $('game-message').textContent = value; },

@@ -1,6 +1,7 @@
 // v0.8 재미·연출 개선 검사: 추측 없는 지뢰찾기 생성, 스네이크 HUD·벽, 효과 모듈의 안전성.
 import { minesNoGuess, minesSolvable, mineNeighbors } from '../js/rules.js';
 import { effects } from '../js/effects.js';
+import { elastic, wobble } from '../js/core.js';
 import { advance, mount, check, counts, key } from './harness.mjs';
 
 let seed = 7;
@@ -50,4 +51,9 @@ for (const mode of ['easy', 'medium', 'hard']) {
     check(calls.every(([, args]) => args.every((v) => typeof v !== 'number' || Number.isFinite(v))), 'Effects draw only finite coordinates');
     for (let n = 0; n < 120; n++) fx.update(1 / 60); calls.length = 0; fx.draw(ctx); check(!calls.some(([name]) => name === 'arc'), 'Effects expire after their lifetime');
 }
+// 쫀득한 움직임 곡선: 시작·끝이 정확하고, 한 번 넘쳤다 돌아오며, 흔들림은 잦아들어 0이 된다.
+check(elastic(0) === 0 && elastic(1) === 1 && elastic(-1) === 0 && elastic(2) === 1, 'elastic starts at 0 and settles at 1');
+check(Array.from({ length: 40 }, (_, k) => elastic(k / 40)).some((v) => v > 1.02), 'elastic overshoots once before settling');
+check(wobble(0) === 0 && Math.abs(wobble(.05, 1)) > .1 && Math.abs(wobble(.9, 1)) < .01 && wobble(5) === 0 && wobble(-1) === 0, 'wobble springs and decays to rest');
+check(Array.from({ length: 200 }, (_, k) => wobble(k / 100, 2)).every(Number.isFinite), 'wobble stays finite');
 console.log(`PASS: ${counts().assertions} fun / feedback conditions`);

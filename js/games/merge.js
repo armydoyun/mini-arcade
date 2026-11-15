@@ -1,4 +1,4 @@
-import { random, history, reducedMotion } from '../core.js';
+import { random, history } from '../core.js';
 import { slide2048 } from '../rules.js';
 
 export default (s) => {
@@ -9,12 +9,10 @@ export default (s) => {
         if (free.length) { spawned = free[random(0, free.length - 1)]; board[spawned] = Math.random() < .9 ? 2 : 4; }
     };
     const render = () => {
-        const quiet = reducedMotion();
-        cells.forEach((cell, i) => {
+                cells.forEach((cell, i) => {
             cell.textContent = board[i] || ''; cell.dataset.value = board[i];
             cell.className = `cell ${board[i] >= 128 ? 'high' : ''} ${i === spawned ? 'new-tile' : ''} ${merged.includes(i) ? 'merged-tile' : ''}`;
             cell.setAttribute('aria-label', `${Math.floor(i / 4) + 1}행 ${i % 4 + 1}열, ${board[i] || '빈칸'}`);
-            if (merged.includes(i) && !quiet) cell.animate?.([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 150, easing: 'ease-out' });
         });
         merged = []; s.hud([['SCORE', score], ['최대 타일', Math.max(...board)], ['이동', moves]]);
     };

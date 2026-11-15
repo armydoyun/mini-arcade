@@ -1,10 +1,11 @@
-import { background, circle, text, palette, clamp, seededRandom, reducedMotion } from '../core.js';
+import { background, circle, text, palette, clamp, seededRandom, reducedMotion, wobble } from '../core.js';
 import { bubblePosition, bubbleTrace, bubbleResolve } from '../rules.js';
 import { effects } from '../effects.js';
 
 const colors = ['#ff8e7a', '#82b6ff', '#b9f86b', '#f5d47d', '#c1a0ff'], symbols = ['●', '＋', '◆', '−', '×'];
 export const bubbleDescend = (board, phase, row) => ({ board: [...row, ...board.slice(0, -12)], phase: 1 - phase, overflow: board.slice(-12).some(Boolean) });
 export default (s) => {
+    let attached = null; // 방금 붙은 버블: 찰싹 붙으며 출렁인다
     const { canvas, ctx, point } = s.canvas(520, 600), fx = effects(s), random = seededRandom(s.options.seed || 12345), easy = s.options.mode === 'easy', hard = s.options.mode === 'hard', count = easy ? 3 : hard ? 5 : 4;
     let board = Array.from({ length: 168 }, (_, i) => i < (easy ? 4 : hard ? 6 : 5) * 12 ? Math.floor(random() * count) + 1 : 0), phase = 0, score = 0, shots = 0, misses = 0, angle = -Math.PI / 2, aim = angle, current = 1, next = 1, ball = null, busy = 0, swapped = false, falling = [], descent = 0, hudKey = '';
     const available = () => [...new Set(board.filter(Boolean))], pick = () => { const pool = available(); return pool[Math.floor(random() * pool.length)] || 1; };
@@ -21,7 +22,7 @@ export default (s) => {
     };
     const land = (slot) => {
         const result = bubbleResolve(board, slot, current, phase); if (!result) { end(false); return; }
-        const old = board; board = result.board; ball = null; busy = reducedMotion() ? .01 : .36;
+        const old = board; board = result.board; attached = { at: slot, age: 0 }; ball = null; busy = reducedMotion() ? .01 : .36;
         result.popped.forEach((i) => { const p = bubblePosition(i, phase); fx.burst(p.x, p.y, colors[current - 1], 7, 90); });
         falling = result.dropped.map((i) => ({ ...bubblePosition(i, phase), color: old[i], vx: (random() - .5) * 55, vy: 30 + random() * 40 })); if (reducedMotion()) falling = [];
         if (result.popped.length) {
@@ -48,7 +49,7 @@ export default (s) => {
     s.on(canvas, 'pointermove', (event) => { if (s.active() && !ball) pointerAim(event); });
     s.on(canvas, 'pointerdown', (event) => { if (!s.active() || event.button !== 0 || point(event).y >= 515) return; pointerAim(event); angle = aim; shoot(); });
     s.afterFinish((dt) => fx.update(dt));
-    s.run((dt) => {
+    s.run((dt) => { if (attached) attached.age += dt;
         fx.update(dt); descent = Math.max(0, descent - dt * 140); falling.forEach((p) => { p.vy += 700 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }); falling = falling.filter((p) => p.y < 625);
         if (busy > 0) { busy = Math.max(0, busy - dt); if (busy < 1e-9) { busy = 0; finishTurn(); s.syncTools(); } return; }
         if (ball) { const trace = bubbleTrace(ball, dt * 850, board, phase); ball = trace; if (trace.contact) land(trace.slot); return; }
@@ -59,7 +60,7 @@ export default (s) => {
         background(ctx, 520, 600, 26); ctx.strokeStyle = '#40556b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(35, 25); ctx.lineTo(35, 480); ctx.moveTo(485, 25); ctx.lineTo(485, 480); ctx.stroke();
         ctx.strokeStyle = '#ff8e7a66'; ctx.lineWidth = 1; ctx.setLineDash([5, 6]); ctx.beginPath(); ctx.moveTo(36, 465); ctx.lineTo(484, 465); ctx.stroke(); ctx.setLineDash([]);
         const orb = (x, y, color, radius = 17) => { circle(ctx, x, y + 2, radius, '#09131a'); circle(ctx, x, y, radius, colors[color - 1]); circle(ctx, x - radius * .3, y - radius * .35, radius * .18, '#ffffff55'); text(ctx, symbols[color - 1], x, y + 1, radius * .85, '#17212b'); };
-        ctx.save(); ctx.beginPath(); ctx.rect(35, 24, 450, 460); ctx.clip(); board.forEach((value, i) => { if (value) { const p = bubblePosition(i, phase); orb(p.x, p.y - descent, value); } }); ctx.restore();
+        ctx.save(); ctx.beginPath(); ctx.rect(35, 24, 450, 460); ctx.clip(); board.forEach((value, i) => { if (value) { const p = bubblePosition(i, phase); orb(p.x, p.y - descent, value, attached && attached.at === i ? 17 * (1 + wobble(attached.age, .22, 26, 8)) : 17); } }); ctx.restore();
         falling.forEach((p) => { ctx.globalAlpha = Math.min(1, (625 - p.y) / 100); orb(p.x, p.y, p.color); }); ctx.globalAlpha = 1;
         if (!ball && !busy && board.some(Boolean)) {
             const preview = bubbleTrace({ x: 260, y: 548, vx: Math.cos(angle), vy: Math.sin(angle) }, 3000, board, phase);
