@@ -26,7 +26,7 @@ for (const mode of games.find((game) => game.id === 'nonogram').modes) {
     }
 }
 let filter = 'all', category = '전체', session = null, current = null, returnFocus = null, toastTimer, navigation = null, activeHash = '';
-let runningOptions = {}, recordVariant = 'classic', nextOptions = null, lastResult = null, fittedHeight = -1, playPlayers = 1, recordType = 'high';
+let runningOptions = {}, playCpu = false, recordVariant = 'classic', nextOptions = null, lastResult = null, fittedHeight = -1, playPlayers = 1, recordType = 'high';
 const supports = (game, players) => game.players === players || game.modes?.some((mode) => mode.players === players);
 const protectedGame = (game) => game.protectProgress || ['퍼즐', '기억·탐색', '턴제 대전'].includes(game.category);
 const toast = (message) => {
@@ -73,7 +73,7 @@ const renderCards = () => {
 };
 const updateRecord = () => {
     const key = recordKey(current, recordVariant), record = cleanRecord(data.records[key]); $('record-value').textContent = recordText(current, key);
-    $('record-detail').textContent = !record.plays ? '첫 번째 한 판을 시작해 보세요.' : recordType === 'duel' ? `P1 ${record.p1}승 · P2 ${record.p2}승 · 무승부 ${record.draws}` : `${record.plays}회 플레이 · ${storageOK ? `마지막 ${record.lastDate || ''}` : '이번 실행 중 기록'}`;
+    $('record-detail').textContent = !record.plays ? '첫 번째 한 판을 시작해 보세요.' : recordType === 'duel' ? `${playCpu ? '나' : 'P1'} ${record.p1}승 · ${playCpu ? '컴퓨터' : 'P2'} ${record.p2}승 · 무승부 ${record.draws}` : `${record.plays}회 플레이 · ${storageOK ? `마지막 ${record.lastDate || ''}` : '이번 실행 중 기록'}`;
 };
 const setIcon = (id, name, label) => { const button = $(id); button.innerHTML = icon(name); button.title = label; button.setAttribute('aria-label', label); };
 const fitFrame = () => {
@@ -145,10 +145,10 @@ const finish = (result) => {
 };
 const start = (game, extra = {}) => {
     const same = current?.id === game.id, previous = same ? runningOptions : {};
-    let mode = extra.mode || previous.mode || game.modes?.find((item) => item.id === data.modes[game.id])?.id || game.modes?.[0]?.id || 'classic';
+    let mode = extra.mode || previous.mode || game.modes?.find((item) => item.id === data.modes[game.id])?.id || (filter === '1' && game.players === 2 ? game.modes?.find((item) => item.players === 1)?.id : '') || game.modes?.[0]?.id || 'classic';
     if (game.progress && !same && !extra.mode && data.completed[completionKey(game, mode)]) mode = game.modes.find((item) => !data.completed[completionKey(game, item.id)])?.id || mode;
     runningOptions = { mode };
-    const modeInfo = game.modes?.find((item) => item.id === mode); playPlayers = modeInfo?.players || game.players; recordType = modeInfo?.record || game.record;
+    const modeInfo = game.modes?.find((item) => item.id === mode); playPlayers = modeInfo?.players || game.players; playCpu = !!modeInfo?.cpu; recordType = modeInfo?.record || game.record;
     if (game.seeded) {
         const key = `${game.id}:${mode}`, remembered = extra.seed ?? (same && previous.mode === mode ? previous.seed : data.seeds[key]);
         runningOptions.seed = !extra.fresh && Number.isInteger(remembered) && remembered > 0 && remembered <= 0xffffffff ? remembered : random(1, 0xffffffff);

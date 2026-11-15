@@ -182,3 +182,6 @@ export const createSession = (root, hooks) => {
 
 export const duelHud = (s, turn, p1 = 'P1', p2 = 'P2') => s.hud([['PLAYER 1', p1, `p1 ${turn === 1 ? 'active' : ''}`], ['현재 차례', turn ? `P${turn}` : '대결 종료'], ['PLAYER 2', p2, `p2 ${turn === 2 ? 'active' : ''}`]]);
 export const duelFinish = (s, winner, detail = '') => s.finish({ winner, title: winner ? `P${winner} 승리!` : '무승부!', text: detail || (winner ? '좋은 승부였어요. 한 판 더 겨뤄 볼까요?' : '팽팽한 대결이었어요. 다시 도전해요.') });
+// 혼자 하기(컴퓨터 상대) 결과. 기록은 대전과 같이 P1(나)·P2(컴퓨터) 승수로 남는다.
+export const cpuFinish = (s, winner, detail = '') => s.finish({ winner, title: winner === 1 ? '승리!' : winner === 2 ? '컴퓨터 승리' : '무승부!', text: detail || (winner === 1 ? '컴퓨터를 이겼어요. 한 판 더 해 볼까요?' : winner === 2 ? '아깝네요. 되돌리기로 수를 다시 읽어 보세요.' : '팽팽한 대결이었어요. 다시 도전해요.') });
+export const cpuHud = (s, turn, p1, p2) => s.hud([['나', p1, `p1 ${turn === 1 ? 'active' : ''}`], ['현재 차례', turn === 1 ? '나' : turn === 2 ? '컴퓨터 생각 중…' : '대결 종료'], ['컴퓨터', p2, `p2 ${turn === 2 ? 'active' : ''}`]]);
